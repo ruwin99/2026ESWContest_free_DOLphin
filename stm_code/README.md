@@ -27,6 +27,10 @@
 | SIDE | 클리너 | PA9 / TIM1 CH2 | PC13, PC14 |
 | SIDE | 워터펌프 | PA10 / TIM1 CH3 | PC8, PC9 |
 
+![Jetson, STM32, 주행부와 클리닝 장치의 회로 연결 구성](../docs/images/dolphin-hardware-connection.png)
+
+*그림 1. UART·PWM·엔코더·모터 드라이버·전원과 공통 접지를 포함한 연결 구성*
+
 ## 제어 흐름
 
 1. 전원이 들어오면 주행 모터와 네 청소 출력을 정지한 상태로 대기합니다.

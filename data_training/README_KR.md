@@ -26,6 +26,10 @@
 4. validation에서 모델과 후처리를 선택하고, 선택이 끝난 뒤 locked/sealed test를 평가합니다.
 5. 원 프레임워크와 ONNX Runtime 출력을 비교한 뒤 대상 Jetson에서 TensorRT plan을 검증합니다.
 
+![AI 모델 학습, 검증과 Jetson 배포 과정](../docs/images/dolphin-ai-training-deployment.png)
+
+*그림 1. 데이터 준비, 모델별 학습·적용, 검증, ONNX 변환과 Jetson 배포의 전체 과정*
+
 ## 산출물
 
 학습 checkpoint, 평가 JSON/CSV, 데이터·환경 감사 기록, ONNX와 무결성 해시를 생성합니다. 공개 저장소에는 소스·설정·고지만 남기며 바이너리와 개인정보·비밀정보는 제외합니다.
