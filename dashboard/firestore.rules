@@ -1,0 +1,25 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isVerifiedUser() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser()
+        && exists(/databases/$(database)/documents/admin_users/$(request.auth.uid));
+    }
+
+    // 관리자 UID 문서는 Firebase Console 또는 신뢰된 Admin SDK에서만 등록한다.
+    match /admin_users/{userId} {
+      allow read: if isVerifiedUser() && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    match /inspection_exports/{runId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
+

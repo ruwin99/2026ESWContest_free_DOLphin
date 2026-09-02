@@ -9,6 +9,7 @@
 | CrackSeg9k | 각 학습 프로젝트 README의 DOI/공식 출처 | 여러 원 데이터가 결합된 자료이므로 이미지 제외 |
 | Ultralytics | [ultralytics/ultralytics](https://github.com/ultralytics/ultralytics) | 설치·호출용 프로젝트 코드만 포함하고 패키지 소스/가중치는 제외. 공식 공개판은 AGPL-3.0이며, 그 조건을 적용하지 않는 용도에는 별도 Enterprise 라이선스가 필요함 |
 | PyTorch, torchvision, ONNX, ONNX Runtime | 각 패키지 공식 배포처 | 환경·호출 코드만 포함 |
+| Firebase JavaScript SDK | [firebase/firebase-js-sdk](https://github.com/firebase/firebase-js-sdk), Apache-2.0 | npm 의존성과 연동 코드만 포함하고 자격증명·프로젝트 식별자는 제외 |
 | STM32CubeF1 HAL / CMSIS | STMicroelectronics / Arm | 사용한 소스와 함께 `Drivers/**/LICENSE.txt` 보존 |
 | 대시보드 데모 이미지 | `dashboard/public/demo/IMAGE_SOURCES.md` | 표시·저작자·라이선스 고지 보존 |
 

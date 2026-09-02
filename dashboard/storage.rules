@@ -1,0 +1,18 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && firestore.exists(
+          /databases/(default)/documents/admin_users/$(request.auth.uid)
+        );
+    }
+
+    match /dashboard/media/{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
+

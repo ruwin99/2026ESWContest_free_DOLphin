@@ -8,7 +8,7 @@
 
 ```text
 SIDE/TOP 카메라 → Jetson(TensorRT) → UART → STM32F103 → 모터·클리너·펌프
-                              └─ JSON·PNG·XLSX → 로컬 대시보드
+                              └─ JSON·PNG·XLSX → 로컬/Firebase 대시보드
 ```
 
 | 경로 | 내용 |
@@ -16,7 +16,7 @@ SIDE/TOP 카메라 → Jetson(TensorRT) → UART → STM32F103 → 모터·클�
 | [`code`](code/README.md) | Jetson 실행 코드, 스크립트, 테스트 |
 | [`stm_code`](stm_code/README.md) | STM32CubeIDE 펌웨어 |
 | [`data_training`](data_training/README_KR.md) | 학습·평가·ONNX 변환 코드 |
-| [`dashboard`](dashboard/README.md) | 검사 결과 조회 화면 |
+| [`dashboard`](dashboard/README.md) | 로컬 JSON 및 Firebase 검사 결과 조회 화면 |
 | [`docs`](docs/MODEL_STATUS.md) | 모델 상태와 안전 한계 |
 
 데이터셋, 촬영 영상, checkpoint, ONNX와 TensorRT plan은 용량·라이선스·장치 호환성 때문에 포함하지 않습니다.

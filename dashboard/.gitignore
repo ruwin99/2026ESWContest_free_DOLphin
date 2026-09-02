@@ -28,8 +28,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# Firebase credentials and local project selection
 .env*
+!.env.example
+/.firebaserc
 
 # vercel
 .vercel
