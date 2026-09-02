@@ -80,7 +80,4 @@ STM32는 `stm_code/code/encoder/encoder.ioc`를 STM32CubeIDE에서 clean build�
 
 ## 안전과 라이선스
 
-- 실제 가동 설비 시험은 시설관리자의 승인, 운행 중지, 위험성평가, 보호구와 물리 비상정지 절차가 있을 때만 수행합니다.
-- 현재 프로토콜에는 명령별 ACK, version, sequence와 CRC가 없습니다.
-- 자세한 제한은 [안전 문서](docs/SAFETY_AND_LIMITATIONS.md)를 확인하십시오.
 - 팀 코드와 제3자 구성요소의 이용조건은 [LICENSE](LICENSE)와 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md)에 정리했습니다.
