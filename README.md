@@ -1,83 +1,92 @@
 # DOLphin
 
-카메라와 Jetson으로 레일 표면의 녹·크랙 후보와 이물질을 찾고, STM32로 주행 모터·클리너·워터펌프를 제어하는 축소 테스트베드용 로봇입니다.
+### AI 기반 레일 표면 점검·청소 보조 로봇
 
-> 비전 결과는 표면 이상 후보 선별용입니다. 구조 강도, 균열 깊이, 잔존 수명이나 실제 설비의 운행 안전을 판정하지 않습니다.
+DOLphin은 측면(SIDE)과 상단(TOP) 카메라, Jetson AI를 이용해 레일 표면의 녹·크랙 후보와 이물질을 관찰하고, STM32가 주행 모터·클리너·워터펌프를 제어하는 축소 테스트베드입니다. 검사부터 청소 동작, 재검사, 결과 조회까지 하나의 흐름으로 연결합니다.
 
-## 한눈에 보기
+> 비전 결과는 표면 이상 후보를 선별하기 위한 정보입니다. 구조 강도, 균열 깊이, 잔존 수명 또는 실제 설비의 운행 안전을 판정하지 않습니다.
+
+## 프로젝트 목표
+
+| 관찰 | 제어 | 기록 |
+| --- | --- | --- |
+| 측면·상단 카메라로 레일 표면 상태 확인 | 분석 결과에 따라 주행·클리너·워터펌프 동작 결정 | 초기 검사와 재검사 결과를 이미지·보고서·대시보드로 보존 |
+
+DOLphin은 서로 분리되기 쉬운 표면 검사, 청소 동작과 결과 관리를 하나의 시연 과정으로 구성했습니다.
+
+## 전체 시스템
 
 ```text
-SIDE/TOP 카메라 → Jetson(TensorRT) → UART → STM32F103 → 모터·클리너·펌프
-                              └─ JSON·PNG·XLSX → 로컬/Firebase 대시보드
+SIDE/TOP 카메라
+        │
+        ▼
+Jetson · TensorRT 추론
+        ├─ 녹·크랙 후보·이물질 분석
+        ├─ 실시간 제어 판단
+        └─ JSON·PNG·XLSX 결과 생성 ──→ 로컬/Firebase 대시보드
+        │
+        ▼ UART
+STM32F103 ──→ 주행 모터 · 전면/측면 클리너 · 워터펌프
 ```
 
-| 경로 | 내용 |
+| 구성 요소 | 역할 |
 | --- | --- |
-| [`code`](code/README.md) | Jetson 실행 코드, 스크립트, 테스트 |
-| [`stm_code`](stm_code/README.md) | STM32CubeIDE 펌웨어 |
-| [`data_training`](data_training/README_KR.md) | 학습·평가·ONNX 변환 코드 |
-| [`dashboard`](dashboard/README.md) | 로컬 JSON 및 Firebase 검사 결과 조회 화면 |
-| [`docs`](docs/MODEL_STATUS.md) | 모델 상태와 안전 한계 |
+| SIDE(측면) 카메라 | 레일 옆면의 녹·크랙 후보 관찰 |
+| TOP(상단) 카메라 | 레일 상단의 크랙 후보와 이물질 관찰 |
+| Jetson | TensorRT 추론, 최근 결과 기반 판단, 검사 자료 생성 |
+| STM32F103 | Jetson의 판단을 받아 주행부와 청소 장치 제어 |
+| 결과 대시보드 | 날짜·크레인·레일 구간별 초기/재검사 결과 조회 |
 
-데이터셋, 촬영 영상, checkpoint, ONNX와 TensorRT plan은 용량·라이선스·장치 호환성 때문에 포함하지 않습니다.
+## 시연 흐름
 
-## Jetson 실행
+1. **초기 검사** — 정지 구간에서 SIDE/TOP 영상을 촬영하고 녹·크랙 후보를 기록합니다.
+2. **실시간 분석** — 이동 중 최신 카메라 영상의 지정된 관심영역(ROI)에서 표면 상태와 이물질을 분석합니다.
+3. **청소 동작 판단** — 최근 모델 결과를 함께 확인해 클리너 속도와 워터펌프 동작을 결정합니다.
+4. **재검사** — 같은 검사 단계로 영상을 다시 촬영해 청소 전후 상태를 각각 남깁니다.
+5. **결과 조회** — 레일 구간별 마스크, 점유율과 전후 기록을 보고서와 대시보드에서 확인합니다.
 
-```bash
-cd code
-chmod +x scripts/*.sh
-./scripts/requirement.sh
-./scripts/run.sh --realtime-test
-```
+## AI 모델 구성
 
-| 명령 | 용도 | 실제 UART 제어 |
+실시간 분석은 전체 폭의 고정 ROI를 사용해 제어 판단에 필요한 최신 정보를 만들고, 정지 캡처 분석은 1280×720 전체 프레임을 보고서용으로 보존합니다.
+
+| 분석 대상 | 사용 구간 | 모델 |
 | --- | --- | --- |
-| `./scripts/run.sh --training` | `S` 키로 학습 사진 저장 | 없음 |
-| `./scripts/run.sh --capture-test` | 캡처 녹·크랙 모델 확인 | 없음 |
-| `./scripts/run.sh --realtime-test` | 실시간 ROI·FPS·판단 확인 | 기본 모의 출력 |
-| `./scripts/run.sh` | 전체 촬영·청소·재검사 임무 | 사용 |
+| 녹 4등급 분할 | 실시간 | MobileNetV2–DeepLabV3+ |
+| 녹 4등급 분할 | 정지 캡처 | ResNet101–DeepLabV3+ |
+| 크랙 후보 분할 | 실시간·정지 캡처 | HrSegNet-B32 계열 |
+| 상단 이물질 | 실시간 | YOLO26n hard-negative |
 
-정상 임무 전에 `--no-uart` 또는 `--realtime-test`로 카메라, I/O shape와 모델 SHA를 확인해야 합니다. 정상 임무용 캡처 녹 plan은 검증한 SHA를 `RAIL_ROBOT_CAPTURE_RUST_ENGINE_SHA256`으로 직접 지정해야 UART 실행이 열립니다.
+모델은 Jetson에서 TensorRT로 실행됩니다. 5채널 경량 듀얼헤드는 연구 후보이며 현재 시연 런타임에는 사용하지 않습니다. 세부 전처리와 배포 상태는 [모델 상태표](docs/MODEL_STATUS.md)에 정리되어 있습니다.
 
-## 기준 모델
+## 제어 방식
 
-| 역할 | 기준 |
+- 모델별 최근 결과를 함께 사용해 한 프레임의 변화만으로 출력이 반복 전환되는 현상을 줄입니다.
+- 녹 단계에 따라 클리너 강도와 워터펌프 동작을 구분합니다.
+- 크랙 후보 비율이 제어 기준을 넘으면 해당 클리너와 워터펌프를 정지합니다.
+- 최초 결과가 준비되지 않았거나 새 위험·오류가 발생하면 청소 출력을 정지합니다. 일시적인 결과 공백에는 직전의 검증된 명령만 제한된 시간 동안 유지합니다.
+
+## 결과 기록과 대시보드
+
+검사 결과는 목적에 따라 세 가지 형식으로 나뉩니다.
+
+| 형식 | 내용 |
 | --- | --- |
-| 실시간 녹 | MobileNetV2–DeepLabV3+, 1280×240, TensorRT FP16 내부 연산 |
-| 캡처 녹 | ResNet101–DeepLabV3+, 1280×720 |
-| 실시간·캡처 크랙 | HrSegNet-B32 |
-| 상단 이물질 | YOLO26n hard-negative |
-| 경량 듀얼헤드 | 연구 후보, 현재 런타임 미사용 |
+| XLSX | 초기/재검사의 녹 등급·점유율과 SIDE/TOP 크랙 후보 기록 |
+| JSON·PNG | 모델 출처, 카메라 역할, 레일 구간, 분석 상태와 녹·크랙 마스크 |
+| 대시보드 | 날짜·크레인·레일 구간별 결과, 청소 전후 변화와 미완료·오류 상태 표시 |
 
-정확한 전처리, plan 이름과 승인 상태는 [모델 상태표](docs/MODEL_STATUS.md)에 있습니다. TensorRT plan은 사용할 Jetson에서 같은 TensorRT 버전으로 생성해야 합니다.
+대시보드는 로컬 JSON/PNG 조회 방식과 선택적 Firebase 연동 코드를 제공합니다. Firebase 경로에서는 Firestore가 실행별 JSON을, Storage가 마스크 PNG를 보관합니다. 원본 JPEG는 웹 공개 폴더로 복사하지 않으며 대시보드는 로봇 제어 입력으로 사용하지 않습니다.
 
-## 클리너 출력
+## 저장소 구성
 
-STM32 TIM1은 `ARR=3599`이므로 한 주기는 3600 count입니다.
+| 경로 | 포함 내용 |
+| --- | --- |
+| [`code`](code/README.md) | Jetson 런타임, 실행 모드와 테스트 |
+| [`stm_code`](stm_code/README.md) | STM32F103 펌웨어 |
+| [`data_training`](data_training/README_KR.md) | 학습·평가·ONNX 변환 코드 |
+| [`dashboard`](dashboard/README.md) | 로컬/Firebase 검사 결과 조회 화면 |
+| [`docs`](docs/MODEL_STATUS.md) | 활성 모델과 연구 후보의 배포 상태 |
 
-| compare | 실제 PWM duty | 사용 단계 |
-| ---: | ---: | --- |
-| 1200 | 1200 / 3600 = **33.3%** | 기본 클리너 출력 |
-| 2000 | 2000 / 3600 = **55.6%** | 녹 1단계 출력 |
-| 0 | **0%** | 녹 2·3단계 또는 크랙 기준 초과 시 정지 |
+데이터셋, 촬영 영상, checkpoint, ONNX와 TensorRT plan은 용량·라이선스·장치 호환성 때문에 저장소에 포함하지 않습니다. 프로젝트 원저작 코드와 제3자 구성요소의 이용 조건은 [LICENSE](LICENSE)와 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md)에 정리되어 있습니다.
 
-워터펌프는 녹이 감지되거나 크랙 점유율이 제어 기준을 넘으면 정지합니다. 세부 판단은 최근 모델별 4회 결과를 사용하며, 결과 부족·오류·stale 상태에서는 안전 정지를 선택합니다.
-
-## PC 검증
-
-```powershell
-python -m pip install -r .\code\requirements-test.txt
-python -m unittest discover -s code/tests -p "test_*.py"
-python .\data_training\verify_public_release.py
-
-cd dashboard
-npm ci
-npm run typecheck
-npm test
-```
-
-STM32는 `stm_code/code/encoder/encoder.ioc`를 STM32CubeIDE에서 clean build합니다. Jetson·카메라·UART·모터·펌프 통합시험은 축소 테스트베드에서 별도로 수행해야 합니다.
-
-## 안전과 라이선스
-
-- 팀 코드와 제3자 구성요소의 이용조건은 [LICENSE](LICENSE)와 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md)에 정리했습니다.
+현재 검증 범위는 축소 테스트베드입니다. DOLphin의 카메라 분석 결과는 실제 가동 설비의 구조 안전진단을 대체하지 않습니다.
