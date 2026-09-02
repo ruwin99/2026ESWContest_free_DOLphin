@@ -1142,7 +1142,7 @@ def read_uart_messages(
 
 
 def send_uart_test_command(uart, command: bytes) -> None:
-    """Write one complete actuator-test protocol line or fail closed."""
+    """Write one complete actuator-test protocol line; raise on write failure."""
 
     command_name = command.decode("ascii").strip()
     try:
@@ -1226,7 +1226,7 @@ class CleanerController:
             )
 
     def force_off(self) -> None:
-        """Reset debounce state and immediately request a safe cleaner stop."""
+        """Clear local cleaner duty/heartbeat state and request an immediate stop."""
 
         self.is_on = False
         self.duty_percent = 0.0
@@ -1300,7 +1300,7 @@ class PumpController:
             )
 
     def force_off(self) -> None:
-        """Stop water immediately and arm an immediate first clean observation."""
+        """Clear local pump/heartbeat state and request an immediate stop."""
 
         self.is_on = False
         self._last_on_sent = None
@@ -3409,7 +3409,7 @@ def force_cleaning_safe_off(
     cleaner_controller: CleanerController,
     pump_controller: PumpController,
 ) -> None:
-    """Fail closed once without spamming repeated OFF commands."""
+    """Request each active output OFF, stopping on the first UART write error."""
 
     if cleaner_controller.is_on:
         cleaner_controller.force_off()
@@ -3420,7 +3420,7 @@ def force_cleaning_safe_off(
 def force_cleaning_pairs_safe_off(
     *pairs: tuple[CleanerController, PumpController],
 ) -> None:
-    """Fail every supplied pair closed even if one shared-UART write fails."""
+    """Attempt every OFF command and re-raise the first UART write error."""
 
     first_error = None
     for cleaner_controller, pump_controller in pairs:
@@ -3442,7 +3442,7 @@ def read_realtime_camera_frame(
     cleaner_controller: CleanerController,
     pump_controller: PumpController,
 ) -> tuple[CameraFrame, bool]:
-    """Wait for a new frame, stopping outputs exactly when cached results expire."""
+    """Wait for a frame and request output OFF once cached-result expiry is observed."""
 
     started_at = time.monotonic()
     camera_deadline = started_at + REALTIME_FRAME_TIMEOUT_SECONDS

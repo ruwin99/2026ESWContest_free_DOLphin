@@ -132,8 +132,8 @@ typedef struct
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define PWM_DUTY 1600 /* drive PWM 44.4% of the TIM2 3600-count period. */
-#define LIVE_PWM_DUTY 800 /* realtime drive PWM 22.2% of TIM2. */
+#define PWM_DUTY 1600 /* Motor 2/base: 44.4%; motor 1: 47.1% after the 106% trim. */
+#define LIVE_PWM_DUTY 800 /* Realtime motor 2/base: 22.2%; motor 1: 23.6% after the 106% trim. */
 #define DC_MOTOR_PWM_DUTY_33_3 1200 /* raw TIM1 duty 33.3% */
 #define DC_MOTOR_PWM_DUTY_55_6 2000 /* raw TIM1 duty 55.6% */
 #define WATER_PUMP_PWM_DUTY 3000 /* raw TIM1 duty 83.3% (3600-count period). */
@@ -1164,7 +1164,7 @@ int main(void)
   {
     Error_Handler();
   }
-  /* TIM4 is diagnostic feedback only; capture/section IRQ decisions stay on TIM3. */
+  /* TIM4 encoder counting is started but not read; capture/section IRQs use TIM3. */
   if (HAL_TIM_Encoder_Start(&htim4, TIM_CHANNEL_ALL) != HAL_OK)
   {
     Error_Handler();
