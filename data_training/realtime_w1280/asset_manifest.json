@@ -1,0 +1,48 @@
+{
+  "prepared_at": "2026-08-10",
+  "specification": "REALTIME_MODELS_W1280_H240_H128_TRAINING_GUIDE.md",
+  "training_required_for_baseline": false,
+  "real_capture_files_required_for_baseline": false,
+  "rust": {
+    "architecture": "DeepLabV3+ MobileNetV2 output-stride 8",
+    "checkpoint": "outputs/training/vt_kd/kd-seed42/weights/best.pt",
+    "checkpoint_sha256": "b51c627d76d25dd0873b75c5ea6a8010b94b73b3e8bbce75c82414fdd6a29680",
+    "onnx": "output/models/realtime_w1280/realtime-rust-mnv2-os8-w1280-h240-fp32.onnx",
+    "onnx_sha256": "fd3bcedb29d7fad94d072b6fb4bf2cf7c15b8c9e699091b83f759b89529dae8f",
+    "onnx_bytes": 20947323,
+    "input": "images FP32 [1,3,240,1280]",
+    "output": "logits FP32 [1,4,240,1280]",
+    "camera_crop": "frame[480:720, :]",
+    "external_resize": false,
+    "external_padding": false,
+    "opset": 18,
+    "onnx_runtime_argmax_pixel_agreement": 1.0
+  },
+  "crack": {
+    "architecture": "BGCrack V1 H128 no-input-padding",
+    "checkpoint": "outputs/training/steelcrack/bgcrack-seed42/weights/best.pth",
+    "checkpoint_sha256": "252c8bd1a7ba555a5bbbc9a3ae07c9c7319ceb6dc927ceda0effc56e8fe2f889",
+    "onnx": "output/models/realtime_w1280/realtime-crack-bgcrack-w1280-h128-fp32.onnx",
+    "onnx_sha256": "96d746f41d8f5e8c0d48152994e78c1314b008b97b0d26fc399d131ba530ed86",
+    "onnx_bytes": 41472519,
+    "input": "images FP32 [1,3,128,1280]",
+    "output": "crack_probability FP32 [1,1,128,1280]",
+    "camera_crop": "frame[592:720, :]",
+    "external_resize": false,
+    "external_padding": false,
+    "dct_shapes": {"HFIE1": [32, 320], "HFIE2": [16, 160]},
+    "opset": 18,
+    "contains_onnx_dft": false,
+    "contains_onnx_mod": false,
+    "fft_rewrite_pixel_agreement": 1.0,
+    "onnx_runtime_binary_pixel_agreement": 1.0
+  },
+  "status": {
+    "onnx_export_complete": true,
+    "onnx_runtime_equivalence_passed": true,
+    "runtime_integration_complete": false,
+    "local_pipeline_benchmark_complete": false,
+    "jetson_tensorrt_verified": false,
+    "actual_camera_accuracy_verified": false
+  }
+}

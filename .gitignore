@@ -1,0 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv*/
+venv*/
+.codex-*/
+
+# Secrets and local settings
+.env
+.env.*
+!.env.example
+secrets.*
+*.key
+*.pem
+
+# Models, data and generated results
+*.pt
+*.pth
+*.onnx
+*.engine
+*.plan
+*.trt
+models/
+!data_training/realtime_light_dualhead_96_v1/models/
+!data_training/realtime_light_dualhead_96_v1/models/*.py
+checkpoints/
+teacher_cache/
+data_training/steelcrack/official_bgcrack/
+data_training/steelcrack/audit/
+workspace/datasets/
+data/
+raw/
+downloads/
+outputs/
+runs/
+code/for model/
+*.zip
+*.log
+*.xlsx
+
+# STM32 build products and local IDE state
+**/Debug/
+**/Release/
+**/*.launch
+**/.settings/
+*.o
+*.elf
+*.map
+*.list
+
+# Node / dashboard
+node_modules/
+.next/
+.vinext/
+dist/
+.wrangler/
+dashboard/public/data/
+*.tsbuildinfo
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

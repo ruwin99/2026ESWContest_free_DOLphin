@@ -1,0 +1,70 @@
+project: vt-cssd-mobilenetv2-deeplabv3plus
+seed: 42
+
+paths:
+  official_training: models/virginia_tech_cssd/official_code/Training - Testing
+  torch_home: models/virginia_tech_cssd/torch_cache
+  runs: outputs/training/vt_kd
+  exports: output/models/vt_kd
+
+data:
+  root: data_training/data/raw/virginia_tech_cssd/dataset/512x512
+  split_csv: data_training/vt_kd/splits/vt_train316_val80_seed42.csv
+  input_height: 512
+  input_width: 512
+  classes: [Good, Fair, Poor, Severe]
+  mask_colors_rgb:
+    Good: [0, 0, 0]
+    Fair: [128, 0, 0]
+    Poor: [0, 128, 0]
+    Severe: [128, 128, 0]
+
+student:
+  architecture: deeplabv3plus_mobilenet
+  output_stride: 8
+  num_classes: 4
+  pretrained_backbone: true
+  expected_parameters: 5221348
+  preprocessing:
+    color: RGB
+    scale: 0_1
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
+
+teacher:
+  architecture: deeplabv3plus_resnet101
+  checkpoint: models/virginia_tech_cssd/teacher_converted/weighted_ce_r101_state_dict.pt
+  raw_checkpoint: models/virginia_tech_cssd/teacher_raw/var_original_wbatch_2_plus/var_original_wbatch_2_plus_weights_40.pt
+  source_sha256: 9110b28a7d027679076f831d2987d34be3be47883a9d724456810452a32e1dd5
+  preprocessing:
+    color: BGR
+    scale: 0_255
+    mean: null
+    std: null
+
+loss:
+  class_weights: [0.1, 0.3, 0.3, 0.3]
+  kd_temperature: 4.0
+  kd_weight: 0.5
+
+train:
+  epochs: 80
+  physical_batch_size: 8
+  gradient_accumulation_steps: 2
+  amp: fp16
+  optimizer: adamw
+  backbone_lr: 0.0001
+  classifier_lr: 0.0003
+  weight_decay: 0.0001
+  warmup_epochs: 5
+  scheduler: cosine
+  early_stopping_patience: 15
+  num_workers: 4
+  best_metric: val_macro_iou_corrosion3
+  horizontal_flip_probability: 0.5
+
+export:
+  onnx_opset: 17
+  fixed_batch: 1
+  output_logits_only: true
+

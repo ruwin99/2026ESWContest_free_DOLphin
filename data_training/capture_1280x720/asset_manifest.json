@@ -1,0 +1,73 @@
+{
+  "prepared_at": "2026-08-10",
+  "specification": "CAPTURE_MODELS_W1280_H720_TRAINING_GUIDE.md",
+  "dataset": {
+    "root": "data_training/capture_1280x720",
+    "required_external_size": [1280, 720],
+    "real_capture_files_supplied": false,
+    "real_capture_files_required_for_phase1": false,
+    "audit": "manifests/dataset_audit.json",
+    "file_manifest": "manifests/dataset_files.csv",
+    "metadata_template": "manifests/capture_manifest.template.csv"
+  },
+  "corrosion": {
+    "architecture": "DeepLabV3+ ResNet-101 output stride 8",
+    "initial_checkpoint": "models/virginia_tech_cssd/teacher_converted/weighted_ce_r101_state_dict.pt",
+    "initial_checkpoint_sha256": "ee2bf877bcab13f79da96758811b7ad6f2fafa8b17cb65951127e320bd28b3be",
+    "input": "images FP32 BGR [1,3,720,1280], 0..255",
+    "output": "logits FP32 [1,4,720,1280]",
+    "class_order": ["Good", "Fair", "Poor", "Severe"],
+    "fp32_smoke_passed": true,
+    "smoke_peak_cuda_memory_mib": 687.38818359375,
+    "baseline_onnx": "output/models/capture_1280x720/corrosion-capture-r101-os8-w1280-h720-fp32.onnx",
+    "baseline_onnx_sha256": "38db0d0afe7ef1e808e77858dabd3a75dd5ecd6df40bd2bcfcda98f728bab9e8",
+    "baseline_onnx_bytes": 234843757,
+    "onnx_opset": 18,
+    "onnx_runtime_pixel_decision_agreement": 1.0,
+    "public_validation_regression": {
+      "canvas_fill": "reflect",
+      "original_macro_iou": 0.759606,
+      "capture_macro_iou": 0.733137,
+      "macro_iou_drop": 0.026469,
+      "provisional_gate_passed": false,
+      "report": "manifests/public_regression_corrosion_validation_reflect.json"
+    }
+  },
+  "crack": {
+    "architecture": "BGCrack V1 external720 internal736 minimum-input-padding wrapper",
+    "initial_checkpoint": "outputs/training/steelcrack/bgcrack-seed42/weights/best.pth",
+    "initial_checkpoint_sha256": "252c8bd1a7ba555a5bbbc9a3ae07c9c7319ceb6dc927ceda0effc56e8fe2f889",
+    "input": "images FP32 RGB [1,3,720,1280], [-1,1]",
+    "internal_input": "FP32 [1,3,736,1280], zero pad top/bottom 8",
+    "output": "crack_probability FP32 [1,1,720,1280]",
+    "dct_shapes": {"HFIE1": [184, 320], "HFIE2": [92, 160]},
+    "mobilevit_feature_padding": "MVT4 only: fixed one-row bottom pad 23x40 to 24x40, then crop back to 23x40",
+    "fp32_smoke_passed": true,
+    "smoke_peak_cuda_memory_mib": 1049.5751953125,
+    "baseline_onnx": "output/models/capture_1280x720/crack-capture-bgcrack-ext-w1280-h720-int-w1280-h736-fp32.onnx",
+    "baseline_onnx_sha256": "1bcd80ecd15d55d5460957dd2349b4a65ef9ecf2a76ccc37a8581deca3455d2b",
+    "baseline_onnx_bytes": 192975354,
+    "onnx_opset": 18,
+    "contains_onnx_dft": false,
+    "contains_dynamic_onnx_mod": false,
+    "onnx_runtime_pixel_decision_agreement": 1.0,
+    "public_validation_regression": {
+      "canvas_fill": "reflect",
+      "original_hard_dice": 0.859449,
+      "capture_hard_dice": 0.825955,
+      "hard_dice_drop": 0.033493,
+      "provisional_gate_passed": false,
+      "report": "manifests/public_regression_crack_validation_reflect.json"
+    }
+  },
+  "status": {
+    "infrastructure_ready": true,
+    "minimum_padding_baselines_exported": true,
+    "real_camera_finetuning_complete": false,
+    "public_validation_regression_complete": true,
+    "provisional_public_regression_gate_passed": false,
+    "actual_camera_accuracy_verified": false,
+    "locked_test_complete": false,
+    "jetson_tensorrt_verified": false
+  }
+}

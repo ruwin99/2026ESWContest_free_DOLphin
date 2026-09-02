@@ -1,0 +1,10 @@
+accepted: true
+accepted_at: '2026-08-20T14:34:01.990002+00:00'
+policy: exact_sha_global_dedup_test_gt_valid_gt_train
+removed_files: 3130
+label_conflicts_resolved_by_precedence: 3100
+source_files_unchanged: true
+limitation: Only exact SHA duplicates are removed; visually similar or same-capture-group
+  leakage may remain.
+
+

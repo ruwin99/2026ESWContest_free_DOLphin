@@ -1,0 +1,28 @@
+# 대회 GitHub 공개본 구성 기준
+
+[현재 런타임 계보]
+vt_kd/
+steelcrack/
+realtime_w1280/
+capture_1280x720/
+capture_rust_teacher_hardneg_v1/
+yolo26_obstacle/
+YOLO26_hard_negative_1280x720/
+realtime_multitask_5ch_hrseg_v1/
+
+[연구 후보]
+realtime_light_dualhead_96_v1/
+
+[필수 문서와 검사]
+README_KR.md
+COMPETITION_CODE_GUIDE.md
+THIRD_PARTY_NOTICES.md
+verify_public_release.py
+.gitignore
+
+[제외]
+원본 데이터셋과 촬영 이미지/영상
+*.pt, *.pth, *.onnx, *.engine, *.plan, *.trt
+.venv, __pycache__, teacher_cache, outputs, runs, workspace/datasets
+API 키, 토큰, 개인 계정/절대경로
+라이선스가 확인되지 않은 제3자 checkpoint

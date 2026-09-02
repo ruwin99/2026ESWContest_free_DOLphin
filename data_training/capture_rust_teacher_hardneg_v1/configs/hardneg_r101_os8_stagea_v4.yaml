@@ -1,0 +1,142 @@
+format_version: 1
+project_name: capture_rust_teacher_hardneg_v1
+training_profile: stagea_v4_stronger_poor_margin_guard
+status_labels:
+  candidate: true
+  uart_status: NOT_FOR_UART
+  deployment_status: NOT_DEPLOYED
+
+paths:
+  official_training: models/virginia_tech_cssd/official_code/Training - Testing
+  initial_checkpoint: models/virginia_tech_cssd/teacher_converted/weighted_ce_r101_state_dict.pt
+  raw_checkpoint: models/virginia_tech_cssd/teacher_raw/var_original_wbatch_2_plus/var_original_wbatch_2_plus_weights_40.pt
+  baseline_onnx: data_training/capture_rust_teacher_hardneg_v1/baselines/corrosion-capture-r101-os8-w1280-h720-fp32.onnx
+  vt_root: data_training/data/raw/virginia_tech_cssd/dataset/512x512
+  vt_split: data_training/vt_kd/splits/vt_train316_val80_seed42.csv
+  review_manifest: data_training/capture_rust_teacher_hardneg_v1/manifests/hard_negative_review.csv
+  train_manifest: data_training/capture_rust_teacher_hardneg_v1/manifests/train.csv
+  validation_manifest: data_training/capture_rust_teacher_hardneg_v1/manifests/validation.csv
+  sealed_manifest: data_training/capture_rust_teacher_hardneg_v1/manifests/sealed_test.csv
+  sealed_commitment: data_training/capture_rust_teacher_hardneg_v1/manifests/sealed_test_commitment.yaml
+  manifest_lock: data_training/capture_rust_teacher_hardneg_v1/manifests/manifest_lock_stagea_v4.json
+  two_person_overlay_qa: data_training/capture_rust_teacher_hardneg_v1/manifests/two_person_overlay_qa.csv
+  runs_root: outputs/training/capture_rust_teacher_hardneg_v1
+  export_root: output/models/capture_rust_teacher_hardneg_v1
+
+integrity:
+  initial_checkpoint_sha256: ee2bf877bcab13f79da96758811b7ad6f2fafa8b17cb65951127e320bd28b3be
+  raw_checkpoint_sha256: 9110b28a7d027679076f831d2987d34be3be47883a9d724456810452a32e1dd5
+  baseline_onnx_sha256: 38db0d0afe7ef1e808e77858dabd3a75dd5ecd6df40bd2bcfcda98f728bab9e8
+  official_commit: f3d098b09784ac7e78b160906952e7bc79940fb1
+
+model:
+  architecture: deeplabv3plus_resnet101
+  output_stride: 8
+  num_classes: 4
+  class_names: [Good, Fair, Poor, Severe]
+  expected_parameters: 58749604
+  input:
+    name: images
+    dtype: float32
+    color: BGR
+    scale: 0..255
+    shape: [1, 3, 720, 1280]
+    resize: false
+    letterbox: false
+    padding: false
+    normalization: none
+  output:
+    name: logits
+    dtype: float32
+    shape: [1, 4, 720, 1280]
+    activation: none
+
+data:
+  ignore_index: 255
+  allowed_mask_values: [0, 1, 2, 3, 255]
+  train_crop_height: 512
+  train_crop_width: 512
+  positive_to_hard_negative_ratio: [1, 1]
+  require_distinct_labeler_reviewer: false
+  label_approval_basis: explicit_user_bulk_approval_2026-08-20
+  allow_explicit_user_single_reviewer: true
+  cross_session_near_duplicate_policy: user_accepted_same_demo_domain_different_session
+  hard_negative_sources:
+    - for model test
+    - for model test v2
+    - for model test v3
+    - for model test v4
+    - for model test v5
+    - for model test v6
+    - for model test v7
+    - jetson_normal_20260814
+  augmentation:
+    horizontal_flip_probability: 0.5
+    exposure_range: [0.95, 1.05]
+    white_balance_range: [0.98, 1.02]
+    gaussian_noise_std_max: 2.0
+
+sealed:
+  allow_hard_negative_only_for_candidate: true
+  accuracy_scope_without_positive: false_positive_suppression_only_ACCURACY_NOT_FINAL
+
+loss:
+  name: baseline_anchored_hard_negative_ce
+  class_weights_from_train_only: true
+  class_weight_formula: inverse_sqrt_frequency_mean1
+  class_weight_clip: [0.25, 4.0]
+  positive_ce_weight: 1.0
+  positive_teacher_kl_weight: 12.0
+  distillation_temperature: 2.0
+  hard_negative_ce_weight: 4.0
+  hard_negative_top_fraction: 0.01
+  hard_negative_min_pixels_per_sample: 256
+  severe_teacher_margin_weight: 12.0
+  poor_teacher_margin_weight: 24.0
+
+optimizer_reference:
+  source: models/virginia_tech_cssd/official_code/Training - Testing/main_plus.py
+  optimizer: Adam
+  original_learning_rate: 0.0001
+  weight_decay: 0.0
+
+stage_a:
+  epochs: 5
+  physical_batch_size: 8
+  accumulation_steps: 1
+  workers: 4
+  classifier_learning_rate_multiplier: 0.02
+  classifier_learning_rate: 0.000002
+  train_modules: [classifier.classifier.3]
+  frozen_modules: [backbone, classifier_except_final_logits, all_batchnorm, all_dropout]
+  freeze_dropout: true
+
+stage_b:
+  epochs: 10
+  physical_batch_size: 1
+  accumulation_steps: 4
+  workers: 4
+  classifier_learning_rate: 0.00001
+  backbone_learning_rate_multiplier_vs_classifier: 0.1
+  backbone_learning_rate: 0.000001
+  train_modules: [classifier, backbone.layer4]
+  frozen_modules: [backbone.conv1, backbone.layer1, backbone.layer2, backbone.layer3, all_batchnorm]
+  requires_stage_a_validation_gate: true
+
+selection:
+  positive_macro_iou_corrosion3_drop_max: 0.01
+  per_class_recall_drop_max: 0.02
+  new_severe_to_good_or_fair_max: 0
+  new_poor_to_good_max: 0
+  hard_negative_group_may_worsen: false
+  ranking: lowest_hard_negative_non_good_fp_rate
+
+export:
+  height: 720
+  width: 1280
+  opset: 18
+  fixed_shape: true
+  fp32: true
+  max_abs_error: 0.0005
+  mean_abs_error: 0.00001
+  argmax_agreement_min: 0.999

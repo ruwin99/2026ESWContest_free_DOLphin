@@ -1,0 +1,57 @@
+version: 1
+status: EVALUATED_ONCE_CLOSED
+role: locked_final_negative_test
+user_supplied_path: "G:/내 드라이브/for model test/"
+local_mirror_path: "for model test/"
+
+prohibited_uses:
+  - training
+  - validation
+  - development_evaluation
+  - hyperparameter_tuning
+  - confidence_or_iou_tuning
+  - checkpoint_or_epoch_selection
+
+release_condition:
+  - current_all1410_training_finished
+  - candidate_checkpoint_fixed
+  - confidence_and_iou_fixed_before_first_evaluation
+
+evaluation_policy:
+  compare: [baseline, fixed_candidate]
+  camera_shape_hw: [720, 1280]
+  evaluate_once: true
+  do_not_retrain_against_results: true
+
+current_training_membership_check:
+  exact_unversioned_train_path_matches: 0
+  exact_unversioned_manifest_path_matches: 0
+  passed: true
+
+fixed_candidate:
+  checkpoint: "outputs/training/yolo26_obstacle_hardneg_v1/yolo26n_hn_all1410_1280rect_clsout_lr2e5_seed42_b8_v2/weights/best.pt"
+  checkpoint_sha256: "5f08e1fd963627aa81522d00b75b72b4c633016b162e7de529f9849786881d56"
+  selected_epoch: 3
+  confidence: 0.30
+  nms_iou: 0.70
+  imgsz_hw_requested: [720, 1280]
+  imgsz_hw_stride_aligned: [736, 1280]
+  selection_basis: "v8 development negatives improved at conf 0.30 from 5/55 to 3/55 false-positive frames; standard positive validation remained within safety gates"
+  tuning_closed: true
+
+final_test_result:
+  report: "data_training/yolo26_obstacle_hardneg_v1/reports/locked_final_test_once.json"
+  source_images: 66
+  confidence: 0.30
+  nms_iou: 0.70
+  baseline_false_positive_images: 7
+  candidate_false_positive_images: 6
+  baseline_false_positive_boxes: 9
+  candidate_false_positive_boxes: 7
+  baseline_negative_frame_fpr: 0.1060606061
+  candidate_negative_frame_fpr: 0.0909090909
+  baseline_max_confidence: 0.5561510324
+  candidate_max_confidence: 0.5172603726
+  hard_negative_improvement_passed: true
+  evaluation_closed: true
+  prohibit_post_test_retuning: true

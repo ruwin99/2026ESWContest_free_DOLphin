@@ -1,0 +1,41 @@
+{
+  "contract": {
+    "external_height": 720,
+    "external_width": 1280,
+    "crack_internal_height": 736,
+    "crack_internal_width": 1280,
+    "crack_pad_top": 8,
+    "crack_pad_bottom": 8,
+    "onnx_opset": 18
+  },
+  "corrosion": {
+    "architecture": "deeplabv3plus_resnet101",
+    "output_stride": 8,
+    "classes": ["Good", "Fair", "Poor", "Severe"],
+    "class_weights": [0.1, 0.3, 0.3, 0.3],
+    "initial_checkpoint": "models/virginia_tech_cssd/teacher_converted/weighted_ce_r101_state_dict.pt",
+    "input_color": "BGR",
+    "input_scale": "0..255"
+  },
+  "crack": {
+    "architecture": "BGCrack V1",
+    "initial_checkpoint": "outputs/training/steelcrack/bgcrack-seed42/weights/best.pth",
+    "input_color": "RGB",
+    "input_scale": "[-1,1]",
+    "threshold": 0.5,
+    "dct_shapes": {
+      "HFIE1": [184, 320],
+      "HFIE2": [92, 160]
+    }
+  },
+  "training_defaults": {
+    "epochs": 30,
+    "batch_size": 1,
+    "gradient_accumulation_steps": 4,
+    "workers": 2,
+    "seed": 42,
+    "precision": "fp32",
+    "corrosion_learning_rate": 0.00001,
+    "crack_learning_rate": 0.0001
+  }
+}

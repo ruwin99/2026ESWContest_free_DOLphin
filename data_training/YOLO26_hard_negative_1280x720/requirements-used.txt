@@ -1,0 +1,9 @@
+# Core versions recorded from the training/export virtual environment.
+torch==2.11.0+cu128
+ultralytics==8.4.122
+numpy==2.5.2
+PyYAML==6.0.3
+Pillow==12.3.0
+onnx==1.22.0
+onnxruntime==1.29.0
+onnxslim==0.1.96

@@ -1,0 +1,11 @@
+{
+  "python": "3.11.14 (main, Feb 12 2026, 00:37:49) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "executable": "<repo-root>\\data_training\\realtime_multitask_5ch_hrseg_v1\\.venv\\Scripts\\python.exe",
+  "torch": {
+    "version": "2.11.0+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_available": true
+  },
+  "gpu": "NVIDIA GeForce RTX 5070 Ti, 595.79, 16303 MiB"
+}

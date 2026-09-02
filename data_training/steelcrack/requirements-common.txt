@@ -1,0 +1,9 @@
+einops
+numpy
+onnx
+onnxruntime
+opencv-python
+pillow
+ptflops
+tensorboard
+tqdm

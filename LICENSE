@@ -1,0 +1,14 @@
+DOLphin competition source release notice
+
+Copyright (c) 2026 DOLphin team. All rights reserved.
+
+This repository is published for source inspection and competition evaluation.
+No license is granted to copy, modify, distribute, sublicense, or commercially use
+the DOLphin team's original source code unless the copyright holder gives separate
+written permission.
+
+Third-party components remain under their own licenses. In particular, the STM32
+HAL/CMSIS license texts are retained beside those sources. Ultralytics is not
+vendored in this repository; users who install or use it must comply with its
+AGPL-3.0 license or hold an applicable Ultralytics Enterprise license. See
+THIRD_PARTY_NOTICES.md for the complete attribution and dependency policy.

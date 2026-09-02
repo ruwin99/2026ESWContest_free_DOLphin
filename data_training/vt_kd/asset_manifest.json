@@ -1,0 +1,35 @@
+{
+    "prepared_at":  "2026-08-04T03:16:58.5804374+09:00",
+    "dataset_root":  "<repo-root>\\data_training\\data\\raw\\virginia_tech_cssd\\dataset\\512x512",
+    "train_pairs":  396,
+    "test_pairs":  44,
+    "data_zip_sha256":  "45F0EC8B26F1C09D707F3010AF359A28E0985D385D2BF6D98B5D4DD308E9DBE5",
+    "model_zip_sha256":  "AD394E3728EFA239A9647C20AB607B4ED97FE963E5373D3D331225C4F355D208",
+    "license":  "CC0",
+    "sources":  {
+                    "dataset":  "https://data.lib.vt.edu/articles/dataset/Corrosion_Condition_State_Semantic_Segmentation_Dataset/16624663",
+                    "trained_models":  "https://data.lib.vt.edu/articles/software/Trained_Model_for_the_Semantic_Segmentation_of_Corrosion_Condition_States/16628668",
+                    "official_code":  "https://github.com/beric7/corrosion_cs_classification",
+                    "mobilenet_imagenet":  "https://download.pytorch.org/models/mobilenet_v2-b0353104.pth"
+                },
+    "teacher_checkpoints":  {
+                                "l1_resnet101":  {
+                                                     "path":  "<repo-root>\\models\\virginia_tech_cssd\\teacher_raw\\l1_loss\\weights_27.pt",
+                                                     "sha256":  "328392A3B86D2037BCD2EC5D9C11D473B170B57BFF638640E7D4A96971C0024D"
+                                                 },
+                                "l2_resnet101":  {
+                                                     "path":  "<repo-root>\\models\\virginia_tech_cssd\\teacher_raw\\l2_loss\\weights_35.pt",
+                                                     "sha256":  "07278842FB12931FA5ACA2ED5573FE2D2D7529BE8150DDECF65BC31F9A1EA477"
+                                                 },
+                                "augmented_resnet50":  {
+                                                           "path":  "<repo-root>\\models\\virginia_tech_cssd\\teacher_raw\\var_aug_batch_2_resnet50\\var_aug_batch_2_resnet50_weights_18.pt",
+                                                           "sha256":  "59B294BDA1F8F475E14F30015C8BDC4BA81A08A837B37243E9A541AA3B5CA382"
+                                                       },
+                                "weighted_ce_resnet101":  {
+                                                              "path":  "<repo-root>\\models\\virginia_tech_cssd\\teacher_raw\\var_original_wbatch_2_plus\\var_original_wbatch_2_plus_weights_40.pt",
+                                                              "sha256":  "9110B28A7D027679076F831D2987D34BE3BE47883A9D724456810452A32E1DD5"
+                                                          }
+                            },
+    "mobilenet_imagenet_sha256":  "B03531047FFACF1E2488318DCD2ABA1126CDE36E3BFE1AA5CB07700AEEEE9889",
+    "official_code_commit":  "f3d098b09784ac7e78b160906952e7bc79940fb1"
+}

@@ -1,0 +1,10 @@
+numpy
+pillow
+pyyaml
+tqdm
+tensorboard
+pandas
+matplotlib
+onnx
+onnxscript
+onnxruntime

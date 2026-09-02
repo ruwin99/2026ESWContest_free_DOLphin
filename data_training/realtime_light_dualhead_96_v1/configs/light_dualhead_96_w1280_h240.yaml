@@ -1,0 +1,240 @@
+project: realtime-light-dualhead-96-v1
+schema_version: 1
+
+status:
+  phase: PHASE_A_DEVELOPMENT_ONLY
+  scope: fixed_camera_printed_defect_demo_only
+  implementation_ready: true
+  training_authorized: true
+  sealed_test_authorized: false
+  sealed_commitment_required_for_training: false
+  export_authorized: true
+  speed_test_authorized: true
+  final_accuracy_authorized: false
+  required_result_labels: [ACCURACY_NOT_FINAL, NOT_FOR_UART]
+  actuator_authorization: PROHIBITED
+  reason: explicit user approval for Phase A development only; Phase B sealed test and final accuracy/deployment remain prohibited
+
+paths:
+  official_training: models/virginia_tech_cssd/official_code/Training - Testing
+  rust_initialization_checkpoint: outputs/training/vt_kd/kd-seed42/weights/best.pt
+  rust_teacher_onnx: output/models/realtime_w1280/realtime-rust-mnv2-os8-w1280-h240-fp32.onnx
+  hrseg_teacher_onnx: data_training/realtime_light_dualhead_96_v1/official_assets/hrsegnet-b32-crackseg9k-realtime-w1280-h128-fp32.onnx
+  rust_rubric: data_training/realtime_light_dualhead_96_v1/label_specs/rust_grade_rubric.yaml
+  source_inventory: data_training/realtime_light_dualhead_96_v1/manifests/source_inventory.csv
+  train_manifest: data_training/realtime_light_dualhead_96_v1/manifests/train.csv
+  development_calibration_manifest: data_training/realtime_light_dualhead_96_v1/manifests/development_calibration.csv
+  validation_manifest: data_training/realtime_light_dualhead_96_v1/manifests/validation.csv
+  sealed_commitment: data_training/realtime_light_dualhead_96_v1/manifests/sealed_manifest.commitment.json
+  teacher_cache: C:/rail_robot_cache/realtime_light_dualhead_96_v1
+  checkpoints: data_training/realtime_light_dualhead_96_v1/checkpoints
+  exports: data_training/realtime_light_dualhead_96_v1/exports
+  reports: data_training/realtime_light_dualhead_96_v1/reports
+  environment: data_training/realtime_light_dualhead_96_v1/environment
+  phase_a_public_train_manifest: data_training/realtime_multitask_5ch_hrseg_v1/manifests/crackseg9k_bootstrap_train.csv
+  phase_a_public_validation_manifest: data_training/realtime_multitask_5ch_hrseg_v1/manifests/crackseg9k_bootstrap_val.csv
+  phase_a_normal_mask_root: data_training/realtime_light_dualhead_96_v1/prepared/phase_a_normal_masks
+
+teachers:
+  rust:
+    sha256: fd3bcedb29d7fad94d072b6fb4bf2cf7c15b8c9e699091b83f759b89529dae8f
+    byte_size: 20947323
+    input: {name: images, dtype: float32, shape: [1, 3, 240, 1280]}
+    output: {name: logits, dtype: float32, shape: [1, 4, 240, 1280]}
+    preprocess_id: rgb_imagenet_v1
+  crack:
+    sha256: c518a56bed03a6c3071cdf1c88dddf4abd3da9272ad060c7c8071d9b9bbce304
+    byte_size: 9667350
+    input: {name: images, dtype: float32, shape: [1, 3, 128, 1280]}
+    output: {name: crack_logits, dtype: float32, shape: [1, 2, 128, 1280]}
+    preprocess_id: rgb_minus1_plus1_rows112_240_v1
+    margin: channel1_minus_channel0
+
+contract:
+  input: {name: images, dtype: float32, shape: [1, 3, 240, 1280]}
+  output: {name: multitask_logits, dtype: float32, shape: [1, 5, 240, 1280]}
+  color: RGB
+  scale: 0.00392156862745098
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
+  canonical_crop: [0, 0, 1280, 240]
+  padding: false
+  letterbox: false
+  dynamic_axes: false
+  crack_valid_rows: [112, 240]
+  output_channels: [Good, Fair, Poor, Severe, Crack]
+  opset: 17
+
+architecture:
+  name: mobilenetv2_os8_lraspp_light_dualhead96
+  output_stride: 8
+  low_input_channels: 24
+  high_input_channels: 320
+  low_project_channels: 32
+  lraspp_channels: 96
+  concat_channels: 128
+  shared_channels: 96
+  shared_depthwise_groups: 128
+  crack_hidden_channels: 32
+  dropout: 0.1
+  backbone_exact_import_required: true
+
+manifest:
+  split_values: [train, development_calibration, validation, sealed_test]
+  label_mode_values: [gt, partial, teacher_only, unlabeled]
+  scenario_values: [clean, rust_only, crack_only, both, artifact_hard_negative]
+  stable_window_values: [pending, approved, rejected]
+  required_columns:
+    - sample_id
+    - relative_image_path
+    - image_sha256
+    - width
+    - height
+    - section_id
+    - section_start_timestamp
+    - section_end_timestamp
+    - stable_window_review_status
+    - frame_timestamp
+    - frame_timestamp_clock
+    - frame_index
+    - canonical_crop_x0
+    - canonical_crop_y0
+    - canonical_crop_x1
+    - canonical_crop_y1
+    - rust_mask_path
+    - rust_mask_sha256
+    - crack_mask_path
+    - crack_mask_sha256
+    - source_id
+    - print_id
+    - placement_id
+    - session_id
+    - group_id
+    - scenario
+    - rust_grade_present
+    - crack_present
+    - artifact_tags
+    - thin_print
+    - captured_at
+    - camera_id
+    - split
+    - rust_label_mode
+    - crack_label_mode
+    - label_version
+    - rust_rubric_path
+    - rust_rubric_version
+    - rust_rubric_sha256
+    - reviewer_a_result
+    - reviewer_b_result
+    - review_resolution
+    - review_status
+
+phase_a_manifest:
+  required_columns:
+    - sample_id
+    - relative_image_path
+    - image_sha256
+    - native_width
+    - native_height
+    - geometry_contract_id
+    - source
+    - source_group_ids
+    - normal_session_id
+    - group_id
+    - split
+    - scenario
+    - rust_mask_path
+    - rust_mask_sha256
+    - crack_mask_path
+    - crack_mask_sha256
+    - crack_mask_encoding
+    - rust_label_mode
+    - crack_label_mode
+    - synthetic
+    - development_only
+    - provenance_status
+  allowed_geometry_contract_ids:
+    - crackseg9k-four-native-crops-w1280-h240-v1
+    - camera-top-crop-w1280-h240-v1
+  normal_train_roots:
+    - for model test
+    - for model test v2
+    - for model test v3
+    - for model test v4
+    - for model test v5
+    - for model test v6
+    - jetson_normal_20260814
+  normal_validation_roots:
+    - for model test v7
+  public_mask_encoding: binary_0_255_positive
+  normal_mask_encoding: indexed_0_1_ignore255
+
+loss:
+  rust_temperature: 2.0
+  rust_ce_weight: 1.0
+  rust_dice_weight: 0.5
+  rust_kd_weight: 1.0
+  crack_temperature: 2.0
+  crack_pos_weight: 4.0
+  crack_bce_weight: 1.0
+  crack_dice_weight: 1.0
+  crack_boundary_weight: 0.25
+  crack_boundary_radius: 2
+  crack_kd_weight: 0.75
+  crack_kd_epsilon: 0.000001
+
+train:
+  seeds: [17, 29, 43]
+  deterministic_algorithms: true
+  cudnn_benchmark: false
+  physical_batch_size: 4
+  gradient_accumulation: 2
+  workers: 4
+  epochs_per_stage: 40
+  early_stopping_patience: 8
+  optimizer: AdamW
+  weight_decay: 0.0001
+  amp: true
+  amp_dtype: float16
+  gradient_clip_norm: 5.0
+  horizontal_flip_probability: 0.5
+  stage_learning_rates:
+    stage1: {shared: 0.0003, rust_head: 0.0003}
+    stage2: {crack_head: 0.0003}
+    stage3: {shared: 0.0001, heads: 0.0002}
+    stage4: {encoder: 0.00001, shared: 0.00005, heads: 0.0001}
+
+evaluation:
+  frames_per_section: 5
+  frame_relative_seconds: [0.0, 0.5, 1.0, 1.5, 2.0]
+  frame_tolerance_seconds: 0.10
+  temporal_positive_rule: at_least_2_of_5
+  connectivity: 8
+  rust_min_component_pixels: 64
+  crack_probability_threshold: 0.5
+  crack_raw_logit_threshold: 0.0
+  crack_min_component_pixels: 20
+  component_match_iou_threshold: 0.10
+  threshold_calibration_status: UNCALIBRATED_BASELINE
+  gates:
+    rust_macro_iou_min: 0.90
+    rust_poor_severe_section_recall_min: 0.95
+    rust_clean_false_poor_severe_max: 0.0
+    crack_positive_section_recall_min: 0.95
+    thin_print_crack_section_recall_min: 0.95
+    crack_clean_false_stop_max: 0.0
+    artifact_false_stop_max: 0.02
+    crack_pixel_iou_min: 0.75
+
+sealed_test_minimum_groups:
+  clean: 30
+  rust_only: 20
+  crack_only: 20
+  both: 20
+  artifact_hard_negative: 30
+
+deployment:
+  status: NOT_FOR_UART_TRAINING_ARTIFACT
+  jetson_latency_mean_ms_max: 32.0
+  jetson_latency_p95_ms_max: 35.0
+  uart_enabled: false

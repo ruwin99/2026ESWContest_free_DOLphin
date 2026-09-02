@@ -1,0 +1,20 @@
+rubric_name: Virginia Tech four-grade mapping for Phase A development
+rubric_version: phase-a-v1-20260818
+approved_by: competition team reviewer for Phase A development
+approved_at: 2026-08-18T20:00:00+09:00
+approval_scope: PHASE_A_DEVELOPMENT_ONLY
+source_document_path_or_id: data_training/realtime_light_dualhead_96_v1/approvals/phase_a_development_approval_20260818.txt
+source_document_sha256: 0017c8e3f2bf90fbad3179a5941c1c47e490614c05fdf0d4de701f9fe936e664
+rubric_file_sha256: 4d2ac66167ae9ed8b2e0c0a6fed59962c6da3f8bc187756a060cd3201130909c
+rubric_sha_scheme: canonical_yaml_sorted_keys_excluding_rubric_file_sha256_v1
+class_0_definition: Normal rail; no Virginia Tech Fair, Poor, or Severe rust grade applies.
+class_1_fair_definition: Pixels labeled Fair in the Virginia Tech corrosion dataset.
+class_2_poor_definition: Pixels labeled Poor in the Virginia Tech corrosion dataset.
+class_3_severe_definition: Pixels labeled Severe in the Virginia Tech corrosion dataset.
+ambiguous_and_ignore_rules: Any ambiguous or unresolvable pixel is encoded as 255 and excluded from supervised metrics and loss.
+allowed_dataset_scope:
+  - Virginia Tech corrosion labels under their existing class definitions
+  - explicitly reviewed normal-rail negative images as class 0
+prohibited_interpretation:
+  - This mapping is not a structural safety or remaining-life assessment.
+  - Phase A metrics are not final accuracy.

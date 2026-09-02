@@ -1,0 +1,66 @@
+version: 1
+task: object_detection
+class_names:
+  0: obstacle
+
+paths:
+  source_dataset: "--- 2.v1i.yolo26"
+  hard_negative_source: "for model test v8"
+  baseline_model: "data_training/yolo26_obstacle_hardneg_v1/models/baseline/best.pt"
+  workspace: "data_training/yolo26_obstacle_hardneg_v1/workspace"
+  training_outputs: "outputs/training/yolo26_obstacle_hardneg_v1"
+
+source_contract:
+  workspace: "-ohs3h"
+  project: "2-iemaw"
+  version: 1
+  image_count: 8879
+  split_counts:
+    train: 6234
+    valid: 1792
+    test: 853
+  preprocessing: "Resize to 640x640 (Fit (black edges))"
+  augmentation: "none"
+
+hard_negative_contract:
+  image_count: 165
+  width: 1280
+  height: 720
+  group_gap_seconds: 2.0
+  expected_group_counts: [86, 24, 55]
+  train_groups: [1, 2]
+  development_groups: [3]
+
+baseline_contract:
+  sha256: "333c49d129698e2ed781a6862b12224ea3eafe973b582322bffc6ed8573087bd"
+  size_bytes: 5387269
+  ultralytics: "8.4.122"
+
+training:
+  # Ultralytics train accepts one integer. rect=true gives 16:9 images
+  # minimum padding with the longest side at 1280 (normally 1280x736 at stride 32).
+  imgsz: 1280
+  rect: true
+  camera_height: 720
+  camera_width: 1280
+  batch: 8
+  workers: 2
+  epochs: 30
+  patience: 10
+  optimizer: AdamW
+  lr0: 0.001
+  seed: 42
+  deterministic: true
+  amp: true
+  cache: disk
+  smoke_fraction: 0.02
+  smoke_batch: 4
+
+evaluation:
+  imgsz: [720, 1280]
+  rect: false
+  conf_grid: [0.10, 0.15, 0.20, 0.25, 0.30, 0.40, 0.50, 0.60, 0.70]
+  nms_iou: 0.7
+
+
+

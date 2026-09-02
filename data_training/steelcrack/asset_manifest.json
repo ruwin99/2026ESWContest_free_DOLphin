@@ -1,0 +1,65 @@
+{
+  "verified_at": "2026-08-09",
+  "dataset": {
+    "name": "Steelcrack",
+    "official_repository": "https://github.com/hzlbbfrog/Civil-dataset",
+    "download_page": "https://drive.google.com/file/d/1UWcv2b6sZ3jkKBrQJ6Mh6nNraEy7MIbc/view?usp=sharing",
+    "archive": "downloads/Steelcrack.zip",
+    "archive_bytes": 936492924,
+    "archive_sha256": "b14f03755563443f403cb4df9468de73ab034fd554cc94769728a095b89f9b25",
+    "image_size": [512, 512],
+    "official_splits": {
+      "Train": 3300,
+      "Validation": 525,
+      "Test": 530
+    },
+    "local_root": "data/Steelcrack",
+    "audit_report": "audit/steelcrack_audit.json",
+    "audit_ok": true,
+    "cross_split_exact_image_duplicates": 0,
+    "license_reference": "Civil-dataset repository LICENSE (Apache-2.0)"
+  },
+  "training_code": {
+    "official_repository": "https://github.com/hzlbbfrog/BGCrack",
+    "local_clone": "official_bgcrack",
+    "commit": "207929839318267e7f47c91f1b177f321777f732",
+    "license": "Apache-2.0",
+    "local_wrapper": "scripts/train_windows.py",
+    "wrapper_reason": "The official entrypoint forces NCCL/DDP even for one GPU; the local wrapper preserves the official model and five loss terms while using native Windows single-GPU execution."
+  },
+  "verified_environment": {
+    "python": "3.11.14",
+    "torch": "2.12.1+cu130",
+    "torchvision": "0.27.1+cu130",
+    "cuda_runtime": "13.0",
+    "gpu": "NVIDIA GeForce RTX 5070 Ti",
+    "compute_capability": "12.0",
+    "sm_120_compiled": true
+  },
+  "smoke_test": {
+    "batch_size": 9,
+    "workers": 4,
+    "amp": false,
+    "precision": "fp32",
+    "model_parameters": 2315265,
+    "train_batches": 1,
+    "train_samples": 9,
+    "loss": 5.607578277587891,
+    "all_losses_finite": true,
+    "max_cuda_memory_mib": 10288.640625,
+    "output_shape": [9, 1, 512, 512]
+  },
+  "precision_policy": {
+    "default": "fp32",
+    "amp_opt_in_only": true,
+    "reason": "The official BGCrack FFT path uses experimental ComplexHalf operations. An AMP run developed repeated scaler overflows and aborted during epoch 20, while FP32 batch 9 forward/backward passed."
+  },
+  "deployment": {
+    "onnx_exporter": "scripts/export_onnx.py",
+    "powershell_task": "export-onnx",
+    "input": "FP32 RGB NCHW 1x3x512x512 normalized to [-1, 1]",
+    "output": "FP32 crack_probability NCHW 1x1x512x512",
+    "fft_compatibility": "The two complex rfft2/irfft2 blocks are equivalently rewritten as real MatMul operations for ONNX/TensorRT parsing.",
+    "engine_policy": "Build the TensorRT engine on the target Jetson, not on the RTX training PC."
+  }
+}

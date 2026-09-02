@@ -1,0 +1,14 @@
+status: REQUIRED_TO_PROVIDE_NOT_APPROVED
+note: Do not rename this template to rust_grade_rubric.yaml until a human-approved rubric is supplied.
+rubric_name: null
+rubric_version: null
+approved_by: null
+approved_at: null
+source_document_path_or_id: null
+source_document_sha256: null
+rubric_file_sha256: null
+class_0_definition: null
+class_1_fair_definition: null
+class_2_poor_definition: null
+class_3_severe_definition: null
+ambiguous_and_ignore_rules: null

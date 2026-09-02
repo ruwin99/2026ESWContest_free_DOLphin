@@ -1,0 +1,7 @@
+{
+  "python": "3.10.19 (main, Feb 12 2026, 00:37:08) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "executable": "<repo-root>\\data_training\\realtime_multitask_5ch_hrseg_v1\\.venv_paddle\\Scripts\\python.exe",
+  "torch": null,
+  "gpu": "NVIDIA GeForce RTX 5070 Ti, 595.79, 16303 MiB"
+}

@@ -1,0 +1,174 @@
+project: realtime-rust-hrsegnet-5ch-v1
+schema_version: 1
+
+status:
+  training_authorized: false
+  locked_test_passed: false
+  final_export_authorized: false
+  reason: >-
+    Camera-native crack-positive ground truth, independent validation/locked-test
+    ownership, and preregistered numeric gates are not yet audited.
+
+paths:
+  official_training: models/virginia_tech_cssd/official_code/Training - Testing
+  rust_checkpoint: outputs/training/vt_kd/kd-seed42/weights/best.pt
+  rust_teacher_onnx: output/models/realtime_w1280/realtime-rust-mnv2-os8-w1280-h240-fp32.onnx
+  hrseg_teacher_onnx: data_training/realtime_multitask_5ch_hrseg_v1/official_assets/hrsegnet-b32-crackseg9k-realtime-w1280-h128-fp32.onnx
+  hrseg_teacher_metadata: data_training/realtime_multitask_5ch_hrseg_v1/official_assets/hrsegnet-b32-crackseg9k-realtime-w1280-h128-fp32.metadata.json
+  train_manifest: data_training/realtime_multitask_5ch_hrseg_v1/manifests/train.csv
+  val_manifest: data_training/realtime_multitask_5ch_hrseg_v1/manifests/val.csv
+  teacher_cache: data_training/realtime_multitask_5ch_hrseg_v1/teacher_cache
+  runs: data_training/realtime_multitask_5ch_hrseg_v1/runs
+  checkpoints: data_training/realtime_multitask_5ch_hrseg_v1/checkpoints
+  exports: data_training/realtime_multitask_5ch_hrseg_v1/exports
+  metrics: data_training/realtime_multitask_5ch_hrseg_v1/metrics
+  environment: data_training/realtime_multitask_5ch_hrseg_v1/environment
+
+contracts:
+  geometry_contract_id: camera-top240-w1280-crack-roi112-240-v1
+  input_name: images
+  output_name: logits
+  input_shape: [1, 3, 240, 1280]
+  output_shape: [1, 5, 240, 1280]
+  input_dtype: float32
+  output_dtype: float32
+  color: RGB
+  scale: '0..1'
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
+  crop: [0, 0, 1280, 240]
+  crack_valid_rows: [112, 240]
+  resize: false
+  letterbox: false
+  padding: false
+  output_channels: [Good, Fair, Poor, Severe, Crack]
+
+teachers:
+  rust:
+    sha256: fd3bcedb29d7fad94d072b6fb4bf2cf7c15b8c9e699091b83f759b89529dae8f
+    input_name: images
+    input_shape: [1, 3, 240, 1280]
+    output_name: logits
+    output_shape: [1, 4, 240, 1280]
+    preprocessing: imagenet_rgb
+  crack:
+    sha256: dc4e8f8bd357c0474e3146348c4cac6ea9fd03524a87bda85f267bd8ad1bd360
+    handoff_prior_conversion_sha256: c518a56bed03a6c3071cdf1c88dddf4abd3da9272ad060c7c8071d9b9bbce304
+    source_checkpoint_sha256: 7562f06952402d343a944d3cceda823d5b21efbdba709e837772d891c5e750ff
+    official_repository_commit: 1e4dd172e250de5cb951414c317059b3cd89c702
+    input_name: images
+    input_shape: [1, 3, 128, 1280]
+    output_name: crack_logits
+    output_shape: [1, 2, 128, 1280]
+    preprocessing: rgb_div127_5_minus1
+    distillation_signal: channel1_minus_channel0
+
+student:
+  architecture: deeplabv3plus_mobilenetv2_os8_dualhead
+  initialization_branch: A
+  rust_checkpoint_model_name: deeplabv3plus_mobilenet
+  strict_rust_load: true
+  output_stride: 8
+  rust_classes: 4
+  crack_classes: 1
+  crack_detail_channels: 48
+  crack_context_channels: 64
+  crack_fusion_channels: 96
+
+data:
+  required_manifest_columns:
+    - sample_id
+    - image_path
+    - rust_mask_path
+    - crack_mask_path
+    - rust_valid
+    - crack_valid
+    - source
+    - physical_specimen_id
+    - capture_session_id
+    - encoder_section_id
+    - group_id
+    - split
+    - image_sha256
+    - native_width
+    - native_height
+    - crop_x0
+    - crop_y0
+    - crop_x1
+    - crop_y1
+    - geometry_contract_id
+    - camera_native
+    - synthetic
+    - source_group_ids
+    - seam_ignore_mask_path
+  candidate_sources:
+    cssd_original: data_training/data/raw/virginia_tech_cssd/dataset/original
+    steelcrack_512: data_training/steelcrack/data/Steelcrack
+    demo_normal_roots:
+      - for model test
+      - for model test v2
+      - for model test v3
+      - for model test v4
+      - for model test v5
+      - for model test v6
+      - for model test v7
+      - jetson_normal_20260814
+
+loss:
+  rust_class_weights: [0.1, 0.3, 0.3, 0.3]
+  rust_ce_weight: 1.0
+  rust_dice_weight: 1.0
+  rust_kd_weight: 0.5
+  rust_kd_temperature: 4.0
+  crack_bce_weight: 1.0
+  crack_dice_weight: 1.0
+  crack_kd_weight: 0.5
+  crack_kd_temperature: 2.0
+  boundary_loss: null
+  boundary_width_px: null
+  crack_pixel_imbalance_strategy: null
+  crack_pos_weight: null
+  crack_source_sampler_ratio: null
+
+train:
+  seed: 17
+  replay_seeds: [17, 29, 43]
+  epochs: 100
+  physical_batch_size: 2
+  gradient_accumulation_steps: 4
+  workers: 4
+  amp: fp16
+  optimizer: adamw
+  backbone_lr: 0.00001
+  rust_head_lr: 0.00003
+  crack_head_lr: 0.0001
+  weight_decay: 0.0001
+  horizontal_flip_probability: 0.5
+  deterministic: true
+  best_metric: constrained_dual_task_score
+
+preregistered_acceptance:
+  min_capture_sessions: null
+  min_physical_specimens: null
+  min_positive_sections: null
+  min_normal_sections: null
+  min_crack_pixel_coverage: null
+  rust_macro_iou_min: null
+  crack_pixel_recall_min: null
+  crack_dice_min: null
+  thin_max_width_px: null
+  thin_component_recall_min: null
+  component_match_iou: null
+  max_false_positive_burst_frames: null
+  burst_consecutive_frames: null
+  rust_section_aggregation: null
+
+postprocess_search:
+  probability_thresholds: [0.5, 0.75, 0.9, 0.95, 0.97, 0.99]
+  min_component_pixels: [20, 64, 128, 256, 512, 1024]
+  connectivity: 8
+
+export:
+  opset: 18
+  fixed_batch: 1
+  raw_logits_only: true
