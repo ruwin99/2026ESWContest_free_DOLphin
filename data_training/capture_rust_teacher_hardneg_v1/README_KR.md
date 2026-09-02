@@ -1,55 +1,28 @@
-# 캡처 녹 Teacher Hard-negative 파인튜닝 준비본
+# 캡처 녹 hard-negative 미세조정
 
-이 폴더는 기존 캡처 녹 teacher를 보존한 채 별도 후보를 만드는 작업 공간이다. 생성된 v6 후보는 이후 수동 `--capture-test`에만 시험 통합됐으며 정상 UART 임무 기준으로는 계속 `candidate / NOT_FOR_UART / NOT_DEPLOYED`다. 이 학습 폴더 자체에는 Jetson 배포·TensorRT·UART 작업을 포함하지 않는다.
+## 목적
 
-## 고정된 모델 계약
+고정 카메라에서 정상 레일이 녹으로 흔들려 보이던 오탐을 줄이되 기존 캡처 녹 기준 모델을 보존한 별도 후보를 만듭니다.
 
-- DeepLabV3+ ResNet-101, output stride 8, 4 classes, 58,749,604 parameters
-- 입력: OpenCV BGR FP32 `0..255`, 정적 `1x3x720x1280`
-- 출력: activation 전 raw logits FP32 `1x4x720x1280`
-- 클래스: `Good, Fair, Poor, Severe`; ignore index `255`
-- 원 학습기: Adam `1e-4`; Stage A classifier/decoder `1e-5`; 조건부 Stage B layer4 `1e-6`
-- 모든 BatchNorm affine 및 running statistics는 두 단계 모두 고정
+## 데이터와 모델
 
-## 현재 상태
+- 모델: DeepLabV3+ ResNet101, output stride 8
+- 입력: OpenCV BGR FP32 `[1,3,720,1280]`
+- 출력: `Good, Fair, Poor, Severe` raw logits `[1,4,720,1280]`
+- 양성 자료: Virginia Tech 4등급 부식 데이터
+- 음성 자료: 팀 카메라로 촬영하고 사람이 `Good`으로 검토한 정상 레일 사진
+- 라벨 예외: 불확실 영역은 ignore index `255`
 
-구조와 strict checkpoint load는 검증되었다. 사용자가 2026-08-20에 후보 사진 1,462장 전체를 녹이 없는 `approved_good`으로 승인해 class 0 zero-mask를 생성했다. 현재 manifest는 train 1,557장(VT positive 316 + hard-negative 1,241), validation 301장(VT positive 80 + hard-negative 221)이다. 독립 sampled overlay QA와 sealed test는 아직 없으므로 `lock`, 실제 data smoke, 본 학습은 fail-closed로 중단된다.
+공개 양성 자료와 기준 교사는 [Virginia Tech CSSD](https://data.lib.vt.edu/articles/dataset/Corrosion_Condition_State_Semantic_Segmentation_Dataset/16624663)에서 출발했습니다.
 
-이후 사용자가 대표 overlay 8개 group과 같은 시연 도메인의 세션 간 유사성을 단독 승인했다. 독립 두 번째 검토자는 없었다는 사실을 QA metadata에 기록했다. 현재 유일한 학습 차단 항목은 새로운 sealed/locked holdout 사진과 commitment가 없다는 점이다.
+## 학습·평가 흐름
 
-기존 캡처 녹 ONNX 본체가 원래 출력 폴더에서 누락되어 있었으므로 기존 경로를 덮어쓰지 않고 `baselines/corrosion-capture-r101-os8-w1280-h720-fp32.onnx`로 재생성했다. SHA-256은 기존 metadata에 기록된 `38db0d0afe7ef1e808e77858dabd3a75dd5ecd6df40bd2bcfcda98f728bab9e8`과 정확히 일치한다.
+연속 프레임을 촬영 그룹 단위로 분리하고 정상 zero-mask를 사람 검토 후 승인합니다. BatchNorm을 고정한 채 classifier·decoder부터 미세조정하고, 필요할 때만 backbone 상단을 제한적으로 엽니다. validation을 통과한 후보만 ONNX로 내보내며 독립 sealed test는 모델 선택에 사용하지 않습니다.
 
-## 순서
+## 산출물
 
-```powershell
-$ROOT = $env:RAIL_ROBOT_ROOT
-$RUNNER = "$ROOT\data_training\capture_rust_teacher_hardneg_v1\run_capture_rust_hardneg.ps1"
+검토 기록, split 감사 결과, 단계별 checkpoint, 평가 보고서와 1280×720 ONNX 후보를 생성합니다. 기존 캡처 기준 모델은 덮어쓰지 않습니다.
 
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File $RUNNER -Task inventory
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File $RUNNER -Task smoke-structure
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File $RUNNER -Task audit
-```
+## 현재 상태와 한계
 
-`manifests/hard_negative_review.csv`에서 각 사진을 실제로 검토한다. 전체가 녹이 없는 Good이고 가려져 추정할 영역도 없을 때만 `label_status=approved_good`으로 바꾼다. 실제 녹·불확실 영역이 있으면 수동 class-index mask(`0/1/2/3/255`)와 valid mask를 만든 뒤 `approved_masked`로 기록한다. `split`, 촬영 metadata, `group_id`, 서로 다른 `labeler/reviewer`도 채워야 한다.
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File $RUNNER -Task build-manifests
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File $RUNNER -Task audit
-```
-
-독립 사진과 mask로 `sealed_test.csv`를 만든 후 `sealed_test_commitment.yaml`의 TBD를 채운다. 감사 통과 후에만 manifest를 잠근다.
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File $RUNNER -Task lock
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File $RUNNER -Task smoke-data -Seed 42
-```
-
-그 다음 Stage A를 seed 42/43/44로 각각 새 run에서 실행한다. Stage B는 Stage A validation gate를 통과한 `best.pt`에만 별도 run으로 실행한다. 같은 run을 다른 설정으로 단순 resume하지 않는다.
-
-## 금지 사항
-
-- 폴더 이름만 보고 zero mask를 자동 승인하지 않는다.
-- 연속 프레임을 무작위로 train/validation/sealed에 흩뜨리지 않는다.
-- sealed test를 모델 선택·threshold 조정에 사용하지 않는다.
-- 기존 캡처 ONNX 또는 teacher state_dict를 덮어쓰지 않는다.
-- validation 통과 전 ONNX export를 하지 않는다.
+v6 후보는 수동 `--capture-test`에만 통합됐습니다. 정상 UART 임무에는 배포하지 않았고, 실제 녹 양성을 포함한 독립 sealed test와 두 번째 독립 라벨 검토가 충분하지 않아 최종 정확도를 주장하지 않습니다.

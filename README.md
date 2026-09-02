@@ -81,9 +81,9 @@ STM32F103 ──→ 주행 모터 · 전면/측면 클리너 · 워터펌프
 
 | 경로 | 포함 내용 |
 | --- | --- |
-| [`code`](code/README.md) | Jetson 런타임, 실행 모드와 테스트 |
-| [`stm_code`](stm_code/README.md) | STM32F103 펌웨어 |
-| [`data_training`](data_training/README_KR.md) | 학습·평가·ONNX 변환 코드 |
+| [`code`](code/README.md) | Jetson의 카메라 분석·제어 판단과 검사 결과 흐름 |
+| [`stm_code`](stm_code/README.md) | STM32F103 하드웨어 구성·임무 흐름과 출력 정책 |
+| [`data_training`](data_training/README_KR.md) | 모델 계보·학습·평가·ONNX 산출물 |
 | [`dashboard`](dashboard/README.md) | 로컬/Firebase 검사 결과 조회 화면 |
 | [`docs`](docs/MODEL_STATUS.md) | 활성 모델과 연구 후보의 배포 상태 |
 

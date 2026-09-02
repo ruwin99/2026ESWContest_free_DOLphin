@@ -1,37 +1,35 @@
-# 학습·평가 코드
+# AI 학습·평가 코드
 
-로컬 NVIDIA GPU PC에서 사용한 데이터 준비, 학습, 평가와 ONNX export 코드입니다. 데이터셋, 촬영 사진, 가중치, ONNX, TensorRT plan, 가상환경과 실행 결과는 포함하지 않습니다.
+## 목적
 
-## 필수 경로
+레일 표면의 녹·크랙 후보와 상단 이물질을 분석하는 모델의 데이터 준비, 학습, 평가와 ONNX 변환 과정을 보존합니다. 원본 데이터, 촬영 사진, 가중치와 실행 결과는 공개본에 포함하지 않습니다.
 
-| 목적 | 경로 | 상태 |
+## 모델 계보
+
+| 분석 대상 | 프로젝트 | 현재 상태 |
 | --- | --- | --- |
 | 실시간 녹 | `vt_kd/`, `realtime_w1280/` | 현재 런타임 계보 |
-| 캡처 녹·크랙 | `capture_1280x720/` | 기준 export |
-| 캡처 녹 hard-negative | `capture_rust_teacher_hardneg_v1/` | `--capture-test` 후보 |
+| 캡처 녹 | `capture_1280x720/` | 정상 임무 기준 계보 |
+| 캡처 녹 hard-negative | `capture_rust_teacher_hardneg_v1/` | 수동 캡처 시험 후보 |
 | 상단 이물질 | `yolo26_obstacle/`, `YOLO26_hard_negative_1280x720/` | 현재 이물질 계보 |
-| 초기 BGCrack | `steelcrack/` | 과거 계보, 외부 코드는 고정 commit으로 준비 |
-| HrSegNet·5채널·경량 듀얼헤드 | `realtime_multitask_5ch_hrseg_v1/`, `realtime_light_dualhead_96_v1/` | 개발·연구, 미배포 |
+| BGCrack | `steelcrack/`, `realtime_w1280/` | 과거 크랙 계보 |
+| HrSegNet 교사 변환 | `realtime_multitask_5ch_hrseg_v1/` | 현재 실시간 크랙 런타임의 변환 계보 |
+| 5채널·경량 듀얼헤드 학생 | `realtime_multitask_5ch_hrseg_v1/`, `realtime_light_dualhead_96_v1/` | 연구 코드, 미배포 |
 
-배포 상태는 [대회 공개용 가이드](COMPETITION_CODE_GUIDE.md)와 [모델 상태표](../docs/MODEL_STATUS.md)가 기준입니다. 프로젝트별 데이터 배치, requirements, config, seed와 명령은 각 폴더 README를 확인하십시오.
+배포 상태의 기준은 [모델 상태표](../docs/MODEL_STATUS.md)이며 프로젝트별 입력·출력과 출처는 각 폴더 README에 정리했습니다.
 
-## 재현과 검증
+## 학습·평가 흐름
 
-1. [제3자 고지](THIRD_PARTY_NOTICES.md)의 공식 출처에서 데이터와 checkpoint를 받고 라이선스·commit·SHA-256을 확인합니다.
-2. 프로젝트별 가상환경을 만든 뒤 데이터 audit와 split leakage 검사를 먼저 실행합니다.
-3. 고정 config/seed로 학습하고 validation에서 모델과 후처리를 선택합니다.
-4. 선택 후 locked/sealed test를 평가하고 원 프레임워크와 ONNX Runtime 출력을 비교합니다.
-5. TensorRT plan은 사용할 Jetson에서 생성해 I/O·NaN·실제 지연을 다시 검증합니다.
+1. [제3자 고지](THIRD_PARTY_NOTICES.md)의 공식 출처와 이용조건을 확인합니다.
+2. 시편·촬영 세션·연속 프레임 단위로 개발, 검증, 잠금 시험을 분리합니다.
+3. 데이터와 라벨을 감사한 뒤 고정된 config와 seed로 학습합니다.
+4. validation에서 모델과 후처리를 선택하고, 선택이 끝난 뒤 locked/sealed test를 평가합니다.
+5. 원 프레임워크와 ONNX Runtime 출력을 비교한 뒤 대상 Jetson에서 TensorRT plan을 검증합니다.
 
-```powershell
-$env:RAIL_ROBOT_ROOT = (Resolve-Path .).Path
-python .\data_training\verify_public_release.py
-```
+## 산출물
 
-## 주의
+학습 checkpoint, 평가 JSON/CSV, 데이터·환경 감사 기록, ONNX와 무결성 해시를 생성합니다. 공개 저장소에는 소스·설정·고지만 남기며 바이너리와 개인정보·비밀정보는 제외합니다.
 
-- 캡처 녹 hard-negative v6는 `--capture-test` 후보이며 정상 UART 임무에는 미배포입니다.
-- HrSegNet-B32는 공식 checkpoint 변환본이고, 5채널 학생과 경량 듀얼헤드는 연구 코드입니다.
-- hard negative가 모든 재질·색·조명의 오탐을 해결하지는 않습니다.
-- 같은 시편·연속 프레임을 개발·검증·locked/sealed test 사이에 나누지 않으며 임계값은 잠금 시험 전에 고정합니다.
-- 원본 데이터, 모델 바이너리, 가상환경, cache, outputs/runs, 비밀정보와 재배포 권한이 불명확한 자산은 공개본에서 제외합니다.
+## 현재 상태와 한계
+
+현재 런타임 모델과 연구 후보를 구분한 공개 스냅샷입니다. hard negative는 관측한 정상 배경의 오탐을 줄일 수 있지만 모든 재질·색·조명에 대한 일반화를 보장하지 않습니다. 세부 제출 범위는 [대회 공개용 가이드](COMPETITION_CODE_GUIDE.md)를 따릅니다.
