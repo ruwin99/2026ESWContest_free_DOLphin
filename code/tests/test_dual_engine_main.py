@@ -822,6 +822,23 @@ class DualEngineMainTests(unittest.TestCase):
         rectangle = Mock()
         put_text = Mock()
         capture_calls: list[tuple[str, int, str]] = []
+        dashboard_manifest = Path("outputs/dashboard/runs/demo.json")
+
+        def fake_firebase_upload(manifest_path: Path) -> SimpleNamespace:
+            self.assertEqual(manifest_path, dashboard_manifest)
+            self.assertEqual(uart.close_calls, 1)
+            self.assertEqual(camera.release_calls, 1)
+            self.assertEqual(teacher.close_calls, 1)
+            self.assertEqual(student.close_calls, 1)
+            self.assertEqual(analysis_worker.shutdown_calls, 1)
+            return SimpleNamespace(
+                run_id="run_demo",
+                artifact_count=4,
+                uploaded_bytes=1234,
+                firestore_document="inspection_exports/run_demo",
+            )
+
+        firebase_upload = Mock(side_effect=fake_firebase_upload)
 
         def fake_queue_capture_for_analysis(
             _frame: np.ndarray,
@@ -929,6 +946,20 @@ class DualEngineMainTests(unittest.TestCase):
             )
             stack.enter_context(patch.object(run.cv2, "rectangle", rectangle))
             stack.enter_context(patch.object(run.cv2, "putText", put_text))
+            stack.enter_context(
+                patch.object(
+                    run,
+                    "finalize_dashboard_run",
+                    return_value=dashboard_manifest,
+                )
+            )
+            stack.enter_context(
+                patch.object(
+                    run,
+                    "upload_dashboard_manifest_from_environment",
+                    firebase_upload,
+                )
+            )
             stack.enter_context(redirect_stdout(stdout))
             stack.enter_context(redirect_stderr(io.StringIO()))
             exit_code = run.main()
@@ -956,6 +987,7 @@ class DualEngineMainTests(unittest.TestCase):
         # accepting DONE, both with the bounded worker API.
         self.assertEqual(analysis_worker.wait_calls, 2)
         self.assertEqual(analysis_worker.shutdown_calls, 1)
+        firebase_upload.assert_called_once_with(dashboard_manifest)
         display_factory.assert_not_called()
         draw_roi_guide.assert_not_called()
         draw_realtime_roi_guide.assert_not_called()
@@ -964,6 +996,19 @@ class DualEngineMainTests(unittest.TestCase):
         put_text.assert_not_called()
         self.assertIn("Mode: COMPLETE", stdout.getvalue())
         self.assertIn("Headless mission complete", stdout.getvalue())
+
+    def test_close_runtime_resources_reports_failures_and_continues(self) -> None:
+        uart = SimpleNamespace(close=Mock(side_effect=RuntimeError("uart close")))
+        camera = SimpleNamespace(
+            release=Mock(side_effect=RuntimeError("camera close"))
+        )
+
+        with redirect_stderr(io.StringIO()):
+            failures = run.close_runtime_resources(uart=uart, camera=camera)
+
+        self.assertEqual(failures, ("UART", "camera"))
+        uart.close.assert_called_once_with()
+        camera.release.assert_called_once_with()
 
     def test_finally_continues_after_one_resource_close_raises(self) -> None:
         warmup_frame = _camera_frame()

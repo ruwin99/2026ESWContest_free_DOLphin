@@ -22,6 +22,7 @@ from dashboard_export import (
     export_top_crack_record,
     finalize_dashboard_run,
 )
+from firebase_uploader import upload_dashboard_manifest_from_environment
 from crack_detector import (
     CRACK_COLOR_BGR,
     DEFAULT_MIN_COMPONENT_PIXELS,
@@ -4437,7 +4438,9 @@ def close_runtime_resources(
     camera=None,
     top_camera=None,
     close_windows: bool = False,
-) -> None:
+) -> tuple[str, ...]:
+    """Close every supplied resource and report the names that raised errors."""
+
     resources = (
         ("display", None if display is None else display.close),
         ("UART", None if uart is None else uart.close),
@@ -4465,13 +4468,16 @@ def close_runtime_resources(
         ("top camera", None if top_camera is None else top_camera.release),
         ("OpenCV windows", cv2.destroyAllWindows if close_windows else None),
     )
+    failures: list[str] = []
     for resource_name, close_resource in resources:
         if close_resource is None:
             continue
         try:
             close_resource()
         except Exception as exc:
+            failures.append(resource_name)
             print(f"Could not close {resource_name}: {exc}", file=sys.stderr)
+    return tuple(failures)
 
 
 def run_dual_camera_realtime_test(args: argparse.Namespace) -> int:
@@ -6513,6 +6519,7 @@ def main() -> int:
     worker_failure_reported = None
     mission_completed = False
     dashboard_finalized = False
+    dashboard_manifest_path = None
     try:
         while True:
             if realtime_actuator_arbiter is not None:
@@ -6983,14 +6990,12 @@ def main() -> int:
                     mode = COMPLETE_MODE
                     mission_completed = True
                     try:
-                        dashboard_finalized = (
-                            finalize_dashboard_run(
-                                workbook=workbook,
-                                output_directory=CAPTURE_DIRECTORY,
-                                status="complete",
-                            )
-                            is not None
+                        dashboard_manifest_path = finalize_dashboard_run(
+                            workbook=workbook,
+                            output_directory=CAPTURE_DIRECTORY,
+                            status="complete",
                         )
+                        dashboard_finalized = dashboard_manifest_path is not None
                     except Exception as exc:
                         print(
                             "Dashboard mission finalization failed; XLSX and "
@@ -7523,7 +7528,7 @@ def main() -> int:
                 )
             if dashboard_status is not None:
                 try:
-                    finalize_dashboard_run(
+                    dashboard_manifest_path = finalize_dashboard_run(
                         workbook=workbook,
                         output_directory=CAPTURE_DIRECTORY,
                         status=dashboard_status,
@@ -7535,7 +7540,7 @@ def main() -> int:
                         f"images remain valid: {exc}",
                         file=sys.stderr,
                     )
-        close_runtime_resources(
+        resource_close_failures = close_runtime_resources(
             display=display_controller,
             uart=uart if uart_safe_to_close else None,
             student_detector=student_detector,
@@ -7546,6 +7551,44 @@ def main() -> int:
             camera=camera,
             top_camera=top_camera,
         )
+        firebase_upload_safe = (
+            uart_safe_to_close
+            and realtime_actuator_shutdown_failure is None
+            and not any(
+                name in {"UART", "camera", "top camera"}
+                for name in resource_close_failures
+            )
+        )
+        if dashboard_manifest_path is not None and firebase_upload_safe:
+            try:
+                firebase_result = upload_dashboard_manifest_from_environment(
+                    dashboard_manifest_path
+                )
+                if firebase_result is None:
+                    print(
+                        "Firebase upload: disabled; finalized dashboard files "
+                        "remain local."
+                    )
+                else:
+                    print(
+                        "Firebase upload complete: "
+                        f"run_id={firebase_result.run_id}, "
+                        f"artifacts={firebase_result.artifact_count}, "
+                        f"bytes={firebase_result.uploaded_bytes}, "
+                        f"document={firebase_result.firestore_document}"
+                    )
+            except Exception as exc:
+                print(
+                    "Firebase upload failed; local dashboard JSON and images "
+                    f"remain available for retry: {exc}",
+                    file=sys.stderr,
+                )
+        elif dashboard_manifest_path is not None:
+            print(
+                "Firebase upload skipped because actuator/UART/camera safe shutdown "
+                "was not confirmed; local dashboard files remain available.",
+                file=sys.stderr,
+            )
 
     if (
         analysis_shutdown_failure is not None

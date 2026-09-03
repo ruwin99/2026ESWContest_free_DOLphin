@@ -29,7 +29,7 @@ test("Firebase 제출 파일과 환경변수 기반 설정이 유지된다", asy
   assert.equal(JSON.parse(firebaseConfig).firestore.rules, "firestore.rules");
 });
 
-test("Firebase 관리자 UID는 서버 규칙으로만 승인된다", async () => {
+test("Firebase 관리자와 Jetson 업로더 권한이 분리된다", async () => {
   const [firestoreRules, storageRules, authControl] = await Promise.all([
     read("firestore.rules"),
     read("storage.rules"),
@@ -38,8 +38,17 @@ test("Firebase 관리자 UID는 서버 규칙으로만 승인된다", async () =
 
   assert.match(firestoreRules, /admin_users\/\$\(request\.auth\.uid\)/);
   assert.match(firestoreRules, /match \/admin_users\/\{userId\}[\s\S]*allow write: if false;/);
+  assert.match(firestoreRules, /device_uploaders\/\$\(request\.auth\.uid\)/);
+  assert.match(firestoreRules, /match \/inspection_exports\/\{runId\}/);
+  assert.match(firestoreRules, /resource\.data\.uploader_uid == request\.auth\.uid/);
   assert.match(storageRules, /firestore\.exists\(/);
-  assert.match(storageRules, /match \/dashboard\/media\/\{allPaths=\*\*\}/);
+  assert.match(storageRules, /device_uploaders\/\$\(request\.auth\.uid\)/);
+  assert.match(storageRules, /match \/dashboard\/media\/\{runId\}\/\{fileName\}/);
+  assert.match(storageRules, /match \/captures\/\{allPaths=\*\*\}/);
+  assert.match(storageRules, /match \/dashboard\/manifests\/\{fileName\}/);
+  assert.match(storageRules, /request\.resource\.metadata\.uploaderUid == request\.auth\.uid/);
+  assert.match(storageRules, /resource == null/);
+  assert.match(storageRules, /resource\.metadata\.uploaderUid == request\.auth\.uid/);
   assert.match(authControl, /doc\(db, "admin_users", nextUser\.uid\)/);
   assert.doesNotMatch(`${firestoreRules}\n${storageRules}`, /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/);
 });

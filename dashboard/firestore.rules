@@ -11,15 +11,52 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/admin_users/$(request.auth.uid));
     }
 
+    function isEnabledJetsonUploader() {
+      return request.auth != null
+        && exists(
+          /databases/$(database)/documents/device_uploaders/$(request.auth.uid)
+        )
+        && get(
+          /databases/$(database)/documents/device_uploaders/$(request.auth.uid)
+        ).data.enabled == true;
+    }
+
+    function isValidJetsonExport(runId) {
+      return runId.matches('run_[a-f0-9]{24}')
+        && request.resource.data.keys().hasOnly([
+          'payload',
+          'source',
+          'uploader_uid',
+          'imported_at'
+        ])
+        && request.resource.data.source == 'jetson-runtime'
+        && request.resource.data.uploader_uid == request.auth.uid
+        && request.resource.data.imported_at is timestamp
+        && request.resource.data.payload is map
+        && request.resource.data.payload.schema_version == 1
+        && request.resource.data.payload.runs is list
+        && request.resource.data.payload.runs.size() == 1
+        && request.resource.data.payload.runs[0].run_id == runId;
+    }
+
     // 관리자 UID 문서는 Firebase Console 또는 신뢰된 Admin SDK에서만 등록한다.
     match /admin_users/{userId} {
       allow read: if isVerifiedUser() && request.auth.uid == userId;
       allow write: if false;
     }
 
+    // 기기 업로더 허용목록은 승인된 관리자만 관리한다.
+    match /device_uploaders/{userId} {
+      allow read, write: if isAdmin();
+    }
+
     match /inspection_exports/{runId} {
       allow read, write: if isAdmin();
+      allow create: if isEnabledJetsonUploader()
+        && isValidJetsonExport(runId);
+      allow update: if isEnabledJetsonUploader()
+        && resource.data.uploader_uid == request.auth.uid
+        && isValidJetsonExport(runId);
     }
   }
 }
-

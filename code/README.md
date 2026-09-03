@@ -77,6 +77,16 @@ STM32F103 → 주행 모터 · 전면/측면 클리너 · 워터펌프
 
 대시보드 자료 생성은 검사 결과를 보여주기 위한 보조 경로이며 로봇의 모터·펌프 제어 입력으로 사용하지 않습니다.
 
+## 선택적 Firebase 직접 업로드
+
+Firebase 설정이 활성화되어 있으면 임무 결과를 로컬에 확정한 뒤 클리너·펌프 안전 정지를 요청하고 카메라·UART 종료 절차를 먼저 호출합니다. 이후 원본·분석 JPEG와 녹·크랙 마스크 PNG, 최종 JSON을 Storage에 올리고, 모든 파일 전송이 성공한 경우에만 Firestore의 `inspection_exports/{run_id}` 문서를 생성하거나 갱신합니다. 인증·네트워크·권한 오류가 발생해도 로컬 산출물과 임무 결과는 유지됩니다.
+
+- Jetson 전용 Firebase Authentication 계정과 `device_uploaders/{UID}`의 `enabled: true` 허용 문서를 사용합니다.
+- API key·UID·계정 암호는 Git 밖의 `~/.config/rail_robot/firebase.env`에 mode `600`으로 저장합니다.
+- 설정 예시는 [`config/firebase.env.example`](config/firebase.env.example), 대화형 설정은 `bash scripts/firebase_setup.sh`로 실행합니다.
+- 실패한 전송은 `.venv/bin/python jetson_code/firebase_uploader.py`로 로컬 최종 JSON 전체를 다시 시도할 수 있습니다.
+- `--realtime-test`는 검사 산출물을 만들지 않으므로 업로드하지 않습니다.
+
 ## 현재 범위
 
 - 카메라, TensorRT 추론, UART와 구동부를 연결한 축소 테스트베드 런타임입니다.

@@ -14,7 +14,11 @@ REQUIRED = (
     "README.md",
     "THIRD_PARTY_NOTICES.md",
     "code/README.md",
+    "code/config/firebase.env.example",
+    "code/jetson_code/firebase_uploader.py",
     "code/requirements-test.txt",
+    "code/scripts/firebase_setup.sh",
+    "code/tests/test_firebase_uploader.py",
     "dashboard/.env.example",
     "dashboard/.firebaserc.example",
     "dashboard/README.md",
@@ -74,7 +78,7 @@ ABSOLUTE_WINDOWS_PATH = re.compile(
 )
 ABSOLUTE_HOME_PATH = re.compile(r"/home/[A-Za-z0-9._-]+/")
 SECRET_ASSIGNMENT = re.compile(
-    r"(?i)(?:api[_-]?key|access[_-]?token|secret|password)\s*[:=]\s*[\"']([^\"']+)[\"']"
+    r"(?i)(?:api[_-]?key|access[_-]?token|secret|password)\s*[:=]\s*[\"']([^\"'\r\n]+)[\"']"
 )
 PLACEHOLDER_MARKERS = ("본인의", "example", "placeholder", "redacted", "환경", "<", "[")
 
